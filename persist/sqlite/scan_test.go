@@ -31,11 +31,11 @@ import (
 )
 
 func startTestNode(tb testing.TB, n *consensus.Network, genesis types.Block) (*chain.Manager, *syncer.Syncer, *wallet.SingleAddressWallet) {
-	db, tipstate, err := chain.NewDBStore(chain.NewMemDB(), n, genesis, chain.NewZapMigrationLogger(zap.NewNop()))
+	db, err := chain.NewDBStore(chain.NewMemDB(), n, genesis, chain.NewZapMigrationLogger(zap.NewNop()))
 	if err != nil {
 		tb.Fatal(err)
 	}
-	cm := chain.NewManager(db, tipstate)
+	cm := chain.NewManager(db)
 
 	syncerListener, err := net.Listen("tcp", ":0")
 	if err != nil {
