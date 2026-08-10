@@ -75,8 +75,9 @@ func testV2Host(tb testing.TB, cm *chain.Manager) rhp4.TransportClient {
 	rs := rhp4.NewServer(hostKey, cm, ctestutil.NewEphemeralContractor(cm), w, ctestutil.NewEphemeralSettingsReporter(), ctestutil.NewEphemeralSectorStore())
 	go siamux.Serve(l, rs, zap.NewNop())
 
-	// announce so the host is discoverable
-	// by the explorer
+	// announce so the host is discoverable by the explorer. the announcement
+	// spends no elements, so it can't go through the txpool; mine it directly
+	// into a block instead.
 	cs := cm.TipState()
 	txn := types.V2Transaction{
 		Attestations: []types.Attestation{
@@ -88,10 +89,10 @@ func testV2Host(tb testing.TB, cm *chain.Manager) rhp4.TransportClient {
 			}.ToAttestation(cs, hostKey),
 		},
 	}
-	if _, err := cm.AddV2PoolTransactions(cs.Index, []types.V2Transaction{txn}); err != nil {
+	b := testutil.MineV2Block(cs, nil, []types.V2Transaction{txn}, types.VoidAddress)
+	if err := cm.AddBlocks([]types.Block{b}); err != nil {
 		tb.Fatal(err)
 	}
-	ctestutil.MineBlocks(tb, cm, types.VoidAddress, 1)
 
 	transport, err := siamux.Dial(context.Background(), l.Addr().String(), hostKey.PublicKey())
 	if err != nil {
@@ -107,11 +108,11 @@ func TestHealth(t *testing.T) {
 	dir := t.TempDir()
 
 	n, genesis := ctestutil.V2Network()
-	store, genesisState, err := chain.NewDBStore(chain.NewMemDB(), n, genesis, chain.NewZapMigrationLogger(zap.NewNop()))
+	store, err := chain.NewDBStore(chain.NewMemDB(), n, genesis, chain.NewZapMigrationLogger(zap.NewNop()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	cm := chain.NewManager(store, genesisState)
+	cm := chain.NewManager(store)
 
 	db, err := sqlite.OpenDatabase(filepath.Join(dir, "explored.sqlite3"), log.Named("sqlite3"))
 	if err != nil {
@@ -154,11 +155,12 @@ func TestChainMigration(t *testing.T) {
 	dir := t.TempDir()
 
 	n, genesis := ctestutil.Network()
-	store, genesisState, err := chain.NewDBStore(chain.NewMemDB(), n, genesis, chain.NewZapMigrationLogger(zap.NewNop()))
+	store, err := chain.NewDBStore(chain.NewMemDB(), n, genesis, chain.NewZapMigrationLogger(zap.NewNop()))
 	if err != nil {
 		t.Fatal(err)
 	}
-	cm := chain.NewManager(store, genesisState)
+	cm := chain.NewManager(store)
+	genesisState := cm.TipState()
 
 	db, err := sqlite.OpenDatabase(filepath.Join(dir, "explored.sqlite3"), log.Named("sqlite3"))
 	if err != nil {

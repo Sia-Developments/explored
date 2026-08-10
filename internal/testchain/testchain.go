@@ -21,7 +21,7 @@ import (
 // benchmarks.
 type Chain struct {
 	DB    explorer.Store
-	Store *chain.DBStore
+	Store chain.StoreScratchpad
 
 	Network     *consensus.Network
 	Blocks      []types.Block
@@ -49,13 +49,13 @@ func New(t testing.TB, db explorer.Store, v2 bool, modifyGenesis func(*consensus
 		modifyGenesis(network, genesisBlock)
 	}
 
-	store, genesisState, err := chain.NewDBStore(chain.NewMemDB(), network, genesisBlock, nil)
+	store, err := chain.NewDBStore(chain.NewMemDB(), network, genesisBlock, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bs := consensus.V1BlockSupplement{Transactions: make([]consensus.V1TransactionSupplement, len(genesisBlock.Transactions))}
-	_, au := consensus.ApplyBlock(network.GenesisState(), genesisBlock, bs, time.Time{})
+	genesisState, au := consensus.ApplyBlock(network.GenesisState(), genesisBlock, bs, time.Time{})
 	if err := db.UpdateChainState(nil, []chain.ApplyUpdate{{
 		ApplyUpdate: au,
 		Block:       genesisBlock,
@@ -66,7 +66,7 @@ func New(t testing.TB, db explorer.Store, v2 bool, modifyGenesis func(*consensus
 
 	return &Chain{
 		DB:    db,
-		Store: store,
+		Store: store.Scratchpad(),
 
 		Network:     network,
 		Blocks:      []types.Block{genesisBlock},

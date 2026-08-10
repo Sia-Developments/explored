@@ -72,12 +72,12 @@ func newExplorer(t *testing.T, network *consensus.Network, genesisBlock types.Bl
 		t.Fatal(err)
 	}
 
-	store, genesisState, err := chain.NewDBStore(bdb, network, genesisBlock, chain.NewZapMigrationLogger(log.Named("chaindb")))
+	store, err := chain.NewDBStore(bdb, network, genesisBlock, chain.NewZapMigrationLogger(log.Named("chaindb")))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cm := chain.NewManager(store, genesisState)
+	cm := chain.NewManager(store)
 
 	e, err := explorer.NewExplorer(cm, db, config.Index{
 		BatchSize: 1000,
