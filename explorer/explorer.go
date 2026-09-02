@@ -36,8 +36,9 @@ type Store interface {
 	BestTip(height uint64) (types.ChainIndex, error)
 	MerkleProof(leafIndex uint64) ([]types.Hash256, error)
 	Transactions(ids []types.TransactionID) ([]Transaction, error)
-	UnspentSiacoinOutputs(address types.Address, offset, limit uint64) ([]SiacoinOutput, error)
-	UnspentSiafundOutputs(address types.Address, offset, limit uint64) ([]SiafundOutput, error)
+	AddressTransactions(addr types.Address, limit, offset uint64) (results []types.TransactionID, err error)
+	UnspentSiacoinOutputs(address types.Address, limit, offset uint64) ([]SiacoinOutput, error)
+	UnspentSiafundOutputs(address types.Address, limit, offset uint64) ([]SiafundOutput, error)
 	Balance(address types.Address) (sc types.Currency, immatureSC types.Currency, sf uint64, err error)
 	Contracts(ids []types.FileContractID) (result []FileContract, err error)
 	AddressEvents(address types.Address, offset, limit int) (events []Event, err error)
@@ -134,6 +135,11 @@ func (e *Explorer) MerkleProof(leafIndex uint64) ([]types.Hash256, error) {
 // Transactions returns the transactions with the specified IDs.
 func (e *Explorer) Transactions(ids []types.TransactionID) ([]Transaction, error) {
 	return e.s.Transactions(ids)
+}
+
+// AddressTransactions returns the transactions involving the address.
+func (e *Explorer) AddressTransactions(addr types.Address, limit, offset uint64) (results []types.TransactionID, err error) {
+	return e.s.AddressTransactions(addr, limit, offset)
 }
 
 // UnspentSiacoinOutputs returns the unspent siacoin outputs owned by the
