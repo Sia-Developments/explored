@@ -421,6 +421,29 @@ func TestSendTransactions(t *testing.T) {
 				testutil.Equal(t, "value", e.sfValue, sfo.SiafundOutput.Value)
 			}
 		}
+
+		{
+			addr1Txns, err := db.AddressTransactions(addr1, math.MaxInt64, 0)
+			if err != nil {
+				panic(err)
+			}
+			// miner payment plus any of the transactions from this loop
+			check(t, "addr1 txns", 1+1+i, len(addr1Txns))
+
+			addr2Txns, err := db.AddressTransactions(addr2, math.MaxInt64, 0)
+			if err != nil {
+				panic(err)
+			}
+			// should only have transactions generated in this loop
+			check(t, "addr2 txns", 1+i, len(addr2Txns))
+
+			addr3Txns, err := db.AddressTransactions(addr3, math.MaxInt64, 0)
+			if err != nil {
+				panic(err)
+			}
+			// should only have transactions generated in this loop
+			check(t, "addr3 txns", 1+i, len(addr3Txns))
+		}
 	}
 }
 

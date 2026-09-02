@@ -164,6 +164,14 @@ CREATE INDEX block_transactions_block_id_index ON block_transactions(block_id);
 CREATE INDEX block_transactions_transaction_id_index ON block_transactions(transaction_id);
 CREATE INDEX block_transactions_transaction_id_block_id ON block_transactions(transaction_id, block_id);
 
+CREATE TABLE transaction_addresses (
+        transaction_id INTEGER REFERENCES transactions(id) ON DELETE CASCADE NOT NULL,
+        address BLOB NOT NULL,
+        UNIQUE(transaction_id, address)
+);
+
+CREATE INDEX transaction_addresses_transaction_id_index ON transaction_addresses(transaction_id);
+
 CREATE TABLE transaction_arbitrary_data (
 	transaction_id INTEGER REFERENCES transactions(id) ON DELETE CASCADE NOT NULL,
 	transaction_order INTEGER NOT NULL,
@@ -589,6 +597,26 @@ CREATE TABLE host_info_v2_netaddresses(
 
 CREATE INDEX host_info_v2_netaddresses_public_key ON host_info_v2_netaddresses(public_key);
 CREATE INDEX host_info_v2_netaddresses_address ON host_info_v2_netaddresses(address);
+
+CREATE TABLE events (
+        id INTEGER PRIMARY KEY,
+        event_id BLOB UNIQUE NOT NULL,
+        maturity_height INTEGER NOT NULL,
+        date_created INTEGER NOT NULL,
+        event_type TEXT NOT NULL,
+        event_data BLOB NOT NULL,
+        block_id BLOB NOT NULL REFERENCES blocks(id) ON DELETE CASCADE,
+        height INTEGER NOT NULL
+);
+CREATE INDEX events_block_id_height_index ON events(block_id, height);
+
+CREATE TABLE event_addresses (
+        event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        address_id INTEGER NOT NULL REFERENCES address_balance(id),
+        PRIMARY KEY (event_id, address_id)
+);
+CREATE INDEX event_addresses_event_id_index ON event_addresses(event_id);
+CREATE INDEX event_addresses_address_id_index ON event_addresses(address_id);
 
 -- initialize the global settings table
 INSERT INTO global_settings (id, db_version) VALUES (0, 0); -- should not be changed

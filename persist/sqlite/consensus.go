@@ -1,7 +1,9 @@
 package sqlite
 
 import (
+	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
