@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"time"
 
+	"go.sia.tech/core/rhp/v3"
 	"go.sia.tech/core/types"
+	"go.sia.tech/coreutils/chain"
 )
 
 func encode(obj any) any {
@@ -25,9 +27,23 @@ func encode(obj any) any {
 		obj.EncodeTo(e)
 		e.Flush()
 		return buf.Bytes()
+	case rhp.SettingsID:
+		return obj[:]
+	case []types.Hash256:
+		var buf bytes.Buffer
+		e := types.NewEncoder(&buf)
+		types.EncodeSlice(e, obj)
+		e.Flush()
+		return buf.Bytes()
+	case []chain.NetAddress:
+		var buf bytes.Buffer
+		e := types.NewEncoder(&buf)
+		types.EncodeSlice(e, obj)
+		e.Flush()
+		return buf.Bytes()
 	case uint64:
 		b := make([]byte, 8)
-		binary.LittleEndian.PutUint64(b, obj)
+		binary.BigEndian.PutUint64(b, obj)
 		return b
 	case time.Time:
 		return obj.Unix()
@@ -55,12 +71,22 @@ func (d *decodable) Scan(src any) error {
 			}
 			v.Hi = binary.BigEndian.Uint64(src)
 			v.Lo = binary.BigEndian.Uint64(src[8:])
+		case *rhp.SettingsID:
+			*v = rhp.SettingsID(src)
 		case types.DecoderFrom:
 			dec := types.NewBufDecoder(src)
 			v.DecodeFrom(dec)
 			return dec.Err()
+		case *[]types.Hash256:
+			dec := types.NewBufDecoder(src)
+			types.DecodeSlice(dec, v)
+			return dec.Err()
+		case *[]chain.NetAddress:
+			dec := types.NewBufDecoder(src)
+			types.DecodeSlice(dec, v)
+			return dec.Err()
 		case *uint64:
-			*v = binary.LittleEndian.Uint64(src)
+			*v = binary.BigEndian.Uint64(src)
 		default:
 			return fmt.Errorf("cannot scan %T to %T", src, d.v)
 		}
@@ -71,6 +97,8 @@ func (d *decodable) Scan(src any) error {
 			*v = uint64(src)
 		case *time.Time:
 			*v = time.Unix(src, 0).UTC()
+		case *time.Duration:
+			*v = time.Duration(src)
 		default:
 			return fmt.Errorf("cannot scan %T to %T", src, d.v)
 		}
@@ -84,45 +112,20 @@ func decode(obj any) sql.Scanner {
 	return &decodable{obj}
 }
 
-type decodableSlice[T any] struct {
-	v *[]T
+type nullDecodable struct {
+	v any
 }
 
-func (d *decodableSlice[T]) Scan(src any) error {
-	switch src := src.(type) {
-	case []byte:
-		dec := types.NewBufDecoder(src)
-		s := make([]T, dec.ReadPrefix())
-		for i := range s {
-			dv, ok := any(&s[i]).(types.DecoderFrom)
-			if !ok {
-				panic(fmt.Errorf("cannot decode %T", s[i]))
-			}
-			dv.DecodeFrom(dec)
-		}
-		if err := dec.Err(); err != nil {
-			return err
-		}
-		*d.v = s
+func decodeNull(obj any) sql.Scanner {
+	return &nullDecodable{obj}
+}
+
+// Scan implements the sql.Scanner interface.
+func (d *nullDecodable) Scan(src any) error {
+	if src == nil {
 		return nil
-	default:
-		return fmt.Errorf("cannot scan %T to []byte", src)
 	}
-}
 
-func decodeSlice[T any](v *[]T) sql.Scanner {
-	return &decodableSlice[T]{v: v}
-}
-
-func encodeSlice[T types.EncoderTo](v []T) []byte {
-	var buf bytes.Buffer
-	enc := types.NewEncoder(&buf)
-	enc.WritePrefix(len(v))
-	for _, e := range v {
-		e.EncodeTo(enc)
-	}
-	if err := enc.Flush(); err != nil {
-		panic(err)
-	}
-	return buf.Bytes()
+	dd := decode(d.v)
+	return dd.Scan(src)
 }

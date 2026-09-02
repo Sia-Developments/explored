@@ -1,30 +1,25 @@
-name: Main
+name: Lint & Test
 on:
-  workflow_dispatch:
   pull_request:
   push:
     branches:
       - master
+
 env:
   CGO_ENABLED: 1
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: read
-    strategy:
-      matrix:
-        os: [ ubuntu-latest , macos-latest, windows-latest ]
-        go-version: [ '1.21', '1.22' ]
+    uses: SiaFoundation/workflows/.github/workflows/go-test.yml@master
+  analyze:
+    runs-on: ubuntu-latest
     steps:
-      - name: Configure git
-        run: git config --global core.autocrlf false # required on Windows
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Jape Analyzer
+        uses: SiaFoundation/action-golang-analysis@HEAD
         with:
-          go-version: ${{ matrix.go-version }}
-      - name: Test
-        uses: ./.github/actions/test
-      - name: Build
-        run: go build -o bin/ ./cmd/explored
+          analyzers: |
+            go.sia.tech/jape.Analyzer@master
+          directories: |
+            api

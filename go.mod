@@ -1,25 +1,40 @@
 module go.sia.tech/explored
 
-go 1.21.6
+go 1.23.2
+
+toolchain go1.24.2
 
 require (
-	github.com/mattn/go-sqlite3 v1.14.22
-	go.etcd.io/bbolt v1.3.9
-	go.sia.tech/core v0.2.2
-	go.sia.tech/coreutils v0.0.4-0.20240327130436-3fc21abba2db
-	go.sia.tech/jape v0.11.1
+	github.com/google/go-cmp v0.7.0
+	github.com/mattn/go-sqlite3 v1.14.28
+	github.com/oschwald/geoip2-golang v1.11.0
+	go.sia.tech/core v0.12.0
+	go.sia.tech/coreutils v0.13.2
+	go.sia.tech/jape v0.13.1
 	go.uber.org/zap v1.27.0
-	golang.org/x/term v0.19.0
-	lukechampine.com/frand v1.4.2
+	gopkg.in/yaml.v3 v3.0.1
+	lukechampine.com/frand v1.5.1
 	lukechampine.com/upnp v0.3.0
 )
 
 require (
-	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
+	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
+	github.com/google/pprof v0.0.0-20230821062121-407c9e7a662f // indirect
 	github.com/julienschmidt/httprouter v1.3.0 // indirect
-	go.sia.tech/mux v1.2.0 // indirect
-	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/sys v0.19.0 // indirect
-	golang.org/x/tools v0.7.0 // indirect
+	github.com/onsi/ginkgo/v2 v2.12.0 // indirect
+	github.com/oschwald/maxminddb-golang v1.13.0 // indirect
+	github.com/quic-go/qpack v0.5.1 // indirect
+	github.com/quic-go/quic-go v0.51.0 // indirect
+	github.com/quic-go/webtransport-go v0.8.1-0.20241018022711-4ac2c9250e66 // indirect
+	go.etcd.io/bbolt v1.4.0 // indirect
+	go.sia.tech/mux v1.4.0 // indirect
+	go.uber.org/mock v0.5.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/crypto v0.37.0 // indirect
+	golang.org/x/mod v0.24.0 // indirect
+	golang.org/x/net v0.39.0 // indirect
+	golang.org/x/sync v0.13.0 // indirect
+	golang.org/x/sys v0.32.0 // indirect
+	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/tools v0.32.0 // indirect
 )

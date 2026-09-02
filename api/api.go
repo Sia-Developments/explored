@@ -4,8 +4,17 @@ import (
 	"time"
 
 	"go.sia.tech/core/types"
-	"go.sia.tech/explored/explorer"
 )
+
+// A StateResponse returns information about the current state of the explored
+// daemon.
+type StateResponse struct {
+	Version   string    `json:"version"`
+	Commit    string    `json:"commit"`
+	OS        string    `json:"os"`
+	BuildTime time.Time `json:"buildTime"`
+	StartTime time.Time `json:"startTime"`
+}
 
 // A GatewayPeer is a currently-connected peer.
 type GatewayPeer struct {
@@ -29,12 +38,6 @@ type TxpoolBroadcastRequest struct {
 type TxpoolTransactionsResponse struct {
 	Transactions   []types.Transaction   `json:"transactions"`
 	V2Transactions []types.V2Transaction `json:"v2transactions"`
-}
-
-// AddressUTXOsResponse is the response for /addresses/:address/utxos.
-type AddressUTXOsResponse struct {
-	UnspentSiacoinOutputs []explorer.SiacoinOutput `json:"unspentSiacoinOutputs"`
-	UnspentSiafundOutputs []explorer.SiafundOutput `json:"unspentSiafundOutputs"`
 }
 
 // AddressBalanceResponse is the response for /addresses/:address/balance.
