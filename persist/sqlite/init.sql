@@ -14,11 +14,14 @@ CREATE TABLE blocks (
 CREATE INDEX blocks_height_index ON blocks(height);
 
 CREATE TABLE address_balance (
-        address BLOB PRIMARY KEY NOT NULL,
+        id INTEGER PRIMARY KEY,
+        address BLOB UNIQUE NOT NULL,
         siacoin_balance BLOB NOT NULL,
         immature_siacoin_balance BLOB NOT NULL,
         siafund_balance BLOB NOT NULL
 );
+
+-- CREATE INDEX address_balance_address_index ON address_balance(address);
 
 CREATE TABLE siacoin_elements (
         id INTEGER PRIMARY KEY,
@@ -26,7 +29,6 @@ CREATE TABLE siacoin_elements (
 
         output_id BLOB UNIQUE NOT NULL,
         leaf_index BLOB NOT NULL,
-        merkle_proof BLOB NOT NULL,
 
         spent INTEGER NOT NULL,
         source INTEGER NOT NULL,
@@ -44,7 +46,6 @@ CREATE TABLE siafund_elements (
 
         output_id BLOB UNIQUE NOT NULL,
         leaf_index BLOB NOT NULL,
-        merkle_proof BLOB NOT NULL,
 
         spent INTEGER NOT NULL,
         claim_start BLOB NOT NULL,
@@ -61,7 +62,6 @@ CREATE TABLE file_contract_elements (
 
         contract_id BLOB NOT NULL,
         leaf_index BLOB NOT NULL,
-        merkle_proof BLOB NOT NULL,
 
         resolved INTEGER NOT NULL,
         valid INTEGER NOT NULL,
@@ -204,12 +204,32 @@ CREATE TABLE transaction_file_contract_revisions (
 
 CREATE INDEX transaction_file_contract_revisions_transaction_id_index ON transaction_file_contract_revisions(transaction_id);
 
-CREATE TABLE merkle_proofs (
-        i INTEGER NOT NULL,
-        j INTEGER NOT NULL,
-        hash BLOB NOT NULL,
-        PRIMARY KEY(i ,j)
+CREATE TABLE state_tree (
+        row INTEGER NOT NULL,
+        column INTEGER NOT NULL,
+        value BLOB NOT NULL,
+        PRIMARY KEY(row, column)
 );
+
+CREATE TABLE events (
+        id INTEGER PRIMARY KEY,
+        event_id BLOB UNIQUE NOT NULL,
+        maturity_height INTEGER NOT NULL,
+        date_created INTEGER NOT NULL,
+        event_type TEXT NOT NULL,
+        event_data BLOB NOT NULL,
+        block_id BLOB NOT NULL REFERENCES blocks(id) ON DELETE CASCADE,
+        height INTEGER NOT NULL
+);
+CREATE INDEX events_block_id_height_index ON events(block_id, height);
+
+CREATE TABLE event_addresses (
+        event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+        address_id INTEGER NOT NULL REFERENCES address_balance(id),
+        PRIMARY KEY (event_id, address_id)
+);
+CREATE INDEX event_addresses_event_id_index ON event_addresses(event_id);
+CREATE INDEX event_addresses_address_id_index ON event_addresses(address_id);
 
 -- initialize the global settings table
 INSERT INTO global_settings (id, db_version) VALUES (0, 0); -- should not be changed

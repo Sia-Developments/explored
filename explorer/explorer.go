@@ -29,19 +29,19 @@ type ChainManager interface {
 // A Store is a database that stores information about elements, contracts,
 // and blocks.
 type Store interface {
-	ProcessChainUpdates(crus []chain.RevertUpdate, caus []chain.ApplyUpdate) error
+	UpdateChainState(reverted []chain.RevertUpdate, applied []chain.ApplyUpdate) error
 
 	Tip() (types.ChainIndex, error)
 	Block(id types.BlockID) (Block, error)
 	BestTip(height uint64) (types.ChainIndex, error)
+	MerkleProof(leafIndex uint64) ([]types.Hash256, error)
 	Transactions(ids []types.TransactionID) ([]Transaction, error)
 	AddressTransactions(addr types.Address, limit, offset uint64) (results []types.TransactionID, err error)
 	UnspentSiacoinOutputs(address types.Address, limit, offset uint64) ([]SiacoinOutput, error)
 	UnspentSiafundOutputs(address types.Address, limit, offset uint64) ([]SiafundOutput, error)
 	Balance(address types.Address) (sc types.Currency, immatureSC types.Currency, sf uint64, err error)
 	Contracts(ids []types.FileContractID) (result []FileContract, err error)
-
-	MerkleProof(leafIndex uint64) ([]types.Hash256, error)
+	AddressEvents(address types.Address, offset, limit int) (events []Event, err error)
 }
 
 // Explorer implements a Sia explorer.
@@ -59,7 +59,7 @@ func syncStore(store Store, cm ChainManager, index types.ChainIndex) error {
 			return fmt.Errorf("failed to subscribe to chain manager: %w", err)
 		}
 
-		if err := store.ProcessChainUpdates(crus, caus); err != nil {
+		if err := store.UpdateChainState(crus, caus); err != nil {
 			return fmt.Errorf("failed to process updates: %w", err)
 		}
 		if len(crus) > 0 {
@@ -112,11 +112,6 @@ func NewExplorer(cm ChainManager, store Store, log *zap.Logger) (*Explorer, erro
 	return e, nil
 }
 
-// MerkleProof gets the merkle proof with the given leaf index.
-func (e *Explorer) MerkleProof(leafIndex uint64) ([]types.Hash256, error) {
-	return e.s.MerkleProof(leafIndex)
-}
-
 // Tip returns the tip of the best known valid chain.
 func (e *Explorer) Tip() (types.ChainIndex, error) {
 	return e.s.Tip()
@@ -132,6 +127,11 @@ func (e *Explorer) BestTip(height uint64) (types.ChainIndex, error) {
 	return e.s.BestTip(height)
 }
 
+// MerkleProof returns the proof of a given leaf.
+func (e *Explorer) MerkleProof(leafIndex uint64) ([]types.Hash256, error) {
+	return e.s.MerkleProof(leafIndex)
+}
+
 // Transactions returns the transactions with the specified IDs.
 func (e *Explorer) Transactions(ids []types.TransactionID) ([]Transaction, error) {
 	return e.s.Transactions(ids)
@@ -144,14 +144,19 @@ func (e *Explorer) AddressTransactions(addr types.Address, limit, offset uint64)
 
 // UnspentSiacoinOutputs returns the unspent siacoin outputs owned by the
 // specified address.
-func (e *Explorer) UnspentSiacoinOutputs(address types.Address, limit, offset uint64) ([]SiacoinOutput, error) {
-	return e.s.UnspentSiacoinOutputs(address, limit, offset)
+func (e *Explorer) UnspentSiacoinOutputs(address types.Address, offset, limit uint64) ([]SiacoinOutput, error) {
+	return e.s.UnspentSiacoinOutputs(address, offset, limit)
 }
 
 // UnspentSiafundOutputs returns the unspent siafund outputs owned by the
 // specified address.
-func (e *Explorer) UnspentSiafundOutputs(address types.Address, limit, offset uint64) ([]SiafundOutput, error) {
-	return e.s.UnspentSiafundOutputs(address, limit, offset)
+func (e *Explorer) UnspentSiafundOutputs(address types.Address, offset, limit uint64) ([]SiafundOutput, error) {
+	return e.s.UnspentSiafundOutputs(address, offset, limit)
+}
+
+// AddressEvents returns the events of a single address.
+func (e *Explorer) AddressEvents(address types.Address, offset, limit int) (events []Event, err error) {
+	return e.s.AddressEvents(address, offset, limit)
 }
 
 // Balance returns the balance of an address.
